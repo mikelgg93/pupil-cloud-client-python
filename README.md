@@ -5,7 +5,7 @@ Pupil Cloud API
 - API version: 1.0
 - Package version: 1.0.1
 
-## Requirements.
+## Supported Python Versions
 
 Python 2.7 and 3.4+
 
