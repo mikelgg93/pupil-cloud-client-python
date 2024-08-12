@@ -64,3 +64,11 @@ target/
 
 #Ipython Notebook
 .ipynb_checkpoints
+
+.env
+.DS_Store
+*.sh
+.gitlab-ci.yml
+swagger.json
+.openapi-generator/FILES
+custom_templates/
