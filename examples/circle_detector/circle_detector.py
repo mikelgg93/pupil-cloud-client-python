@@ -11,8 +11,9 @@ See COPYING and COPYING.LESSER for license details.
 
 import cv2
 import numpy as np
-from methods import dist_pts_ellipse, normalize
 from numpy import linalg as LA
+
+from examples.circle_detector.methods import dist_pts_ellipse, normalize
 
 
 class CircleTracker:

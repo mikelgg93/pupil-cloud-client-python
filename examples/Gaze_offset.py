@@ -8,11 +8,11 @@ from typing import Dict, Optional, Tuple
 import aiohttp
 import av
 import numpy as np
-from circle_detector import CircleTracker
 from dotenv import load_dotenv
 from rich.logging import RichHandler
 
 import pupilcloud
+from examples.circle_detector.circle_detector import CircleTracker
 
 # Setup the logger with a RichHandler for better visual output
 logging.basicConfig(
