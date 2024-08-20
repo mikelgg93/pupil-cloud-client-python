@@ -3,6 +3,7 @@ import base64
 import logging
 import os
 import re
+from typing import Dict, List, Optional, Tuple
 
 import aiohttp
 import cv2
@@ -14,17 +15,24 @@ from rich.pretty import pretty_repr
 
 import pupilcloud
 
-# Setup the logger
+# Setup the logger with a RichHandler for better visual output
 logging.basicConfig(
     format="%(message)s",
     datefmt="[%X]",
     level=logging.INFO,
     handlers=[RichHandler()],
 )
-load_dotenv()
+load_dotenv()  # Load environment variables from a .env file
 
 
-def extract_from_url(url: str) -> dict:
+def extract_from_url(url: str) -> Tuple[str, Dict[str, Optional[str]]]:
+    """
+    Extracts the base URL and specific segments (IDs) from a given Cloud URL.
+    Args:
+        url (str): The full URL to extract from.
+    Returns:
+        tuple: Base URL and a dictionary of extracted segments.
+    """
     base_url = re.match(r"https?://[^/]+", url).group(0)
 
     segments = {
@@ -49,12 +57,26 @@ def extract_from_url(url: str) -> dict:
     return base_url, extracted_segments
 
 
-def is_within_aoi(gaze_x, gaze_y, bounding_box, mask):
+def is_within_aoi(
+    gaze_x: float, gaze_y: float, bounding_box: Dict[str, float], mask: np.ndarray
+) -> bool:
+    """
+    Checks if a gaze point is within an Area of Interest (AOI) defined by a bounding box and a mask.
+    Args:
+        gaze_x (float): X-coordinate of the gaze point (relative to image width).
+        gaze_y (float): Y-coordinate of the gaze point (relative to image height).
+        bounding_box (dict): The bounding box of the AOI with 'min_x', 'max_x', 'min_y', 'max_y' keys.
+        mask (np.ndarray): The binary mask representing the AOI.
+
+    Returns:
+        bool: True if the gaze point is within the AOI, False otherwise.
+    """
     if (
         bounding_box["min_x"] <= gaze_x <= bounding_box["max_x"]
         and bounding_box["max_y"] <= gaze_y <= bounding_box["min_y"]
     ):
         h, w = mask.shape
+        # Check if the point is within the non-zero region of the mask
         if np.any(mask[int(gaze_y * h), int(gaze_x * w)] != [0, 0, 0]):
             return True
         return False
@@ -62,7 +84,14 @@ def is_within_aoi(gaze_x, gaze_y, bounding_box, mask):
         return False
 
 
-async def fetch_image(url):
+async def fetch_image(url: str) -> Optional[bytes]:
+    """
+    Asynchronously fetches an image from a given URL.
+    Args:
+        url (str): The URL of the image to fetch.
+    Returns:
+        bytes: The raw image data if the fetch is successful, None otherwise.
+    """
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
             if response.status == 200:
@@ -76,19 +105,26 @@ async def fetch_image(url):
 
 
 async def main():
+    """
+    Main function to execute the asynchronous tasks, including fetching enrichment data,
+    processing gaze data within AOIs, and visualizing the timeline results.
+    """
     logging.getLogger("Cloud timeline")
 
+    # Set up the Pupil Cloud API configuration
     config = pupilcloud.Configuration()
     config.api_key = {
         "workspace_id": os.environ["WORKSPACE_ID"],
         "api_key": os.environ["CLOUD_TOKEN"],
     }
 
+    # Extract the workspace and project details from the URL
     _, opts = extract_from_url(os.environ["URL"])
 
     async with pupilcloud.ApiClient(config) as api_client:
         CloudClient = pupilcloud.CloudClientApi(api_client)
         logging.info(CloudClient)
+
         try:
             # Get enrichment data
             enrichment = await CloudClient.get_project_enrichment(
@@ -98,7 +134,7 @@ async def main():
             )
             logging.info(pretty_repr(enrichment.result))
 
-            # Get reference image
+            # Get the reference image associated with the enrichment
             reference_image_mapper = await CloudClient.get_markerless(
                 workspace_id=opts["workspace_id"],
                 markerless_id=enrichment.result.additional_properties["args"][
@@ -106,6 +142,7 @@ async def main():
                 ],
             )
 
+            # Fetch and decode the reference image
             image_data = await fetch_image(
                 reference_image_mapper.result.reference_image_thumbnail_url
             )
@@ -123,7 +160,7 @@ async def main():
                 project_id=opts["project_id"],
                 enrichment_id=opts["enrichment_id"],
             )
-            list_aois = []
+            list_aois: List[Dict[str, any]] = []
             for aoi in aois.result:
                 aoi_formatted = {
                     "name": aoi.name,
@@ -139,13 +176,14 @@ async def main():
                 }
                 list_aois.append(aoi_formatted)
 
+            # Initialize the plot
             fig, ax = plt.subplots(figsize=(12, 4))
 
             recording_height = 0
-            y_labels = []
+            y_labels: List[str] = []
 
-            # Filter out slices not matching the current recording ID
-            aoi_legend = {}
+            # Get all the slices
+            aoi_legend: Dict[str, str] = {}
             for i, slice in enumerate(
                 enrichment.result.additional_properties["slices"]
             ):
@@ -156,6 +194,8 @@ async def main():
                     logging.info(
                         f"{i} out of {len(enrichment.result.additional_properties['slices'])}"
                     )
+
+                    # Fetch gaze data for each slice
                     gaze_data = await CloudClient.get_markerless_gaze_on_aoi(
                         workspace_id=opts["workspace_id"],
                         project_id=opts["project_id"],
@@ -168,6 +208,7 @@ async def main():
                         end=slice["end_time_s"],
                     )
 
+                    # Process and plot each gaze point
                     for gaze in gaze_data.result:
                         gaze_x = gaze.gaze_in_aoi_x
                         gaze_y = gaze.gaze_in_aoi_y
@@ -177,6 +218,7 @@ async def main():
                         if gaze_x is not None and gaze_y is not None:
                             aoi_color = None
 
+                            # Check which AOI the gaze falls into
                             for aoi in list_aois:
                                 if is_within_aoi(
                                     gaze_x, gaze_y, aoi["bounding_box"], aoi["mask"]
@@ -198,6 +240,8 @@ async def main():
                             left=start_time,
                             color=bar_color,
                         )
+
+                    # Get recording name and update labels
                     recording = await CloudClient.get_recording(
                         workspace_id=opts["workspace_id"],
                         recording_id=slice["recording_id"],
@@ -213,7 +257,7 @@ async def main():
             max_end_events_dur = max(
                 event.offset_s
                 for event in events.result
-                if (event.name == "recording.end")
+                if event.name == "recording.end"
             )
             ax.set_xlim(left=0, right=max_end_events_dur)
             ax.set_ylabel("Recordings")
@@ -221,14 +265,14 @@ async def main():
             ax.set_yticklabels(y_labels)
             ax.set_title("Gaze in AOI Over Time Across Recordings")
 
-            # Create custom legend handles
+            # Create custom legend handles for AOIs
             handles = [
                 plt.Line2D([0], [0], color=color, lw=4, label=name)
                 for name, color in aoi_legend.items()
             ]
             ax.legend(handles=handles, title="AOIs")
 
-            # Show plot
+            # Show plot and wait for the user to close it
             logging.info("Displaying the plot, close the window to continue ...")
             plt.show(block=True)
 
