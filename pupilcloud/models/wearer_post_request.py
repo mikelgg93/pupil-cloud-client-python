@@ -22,7 +22,7 @@ from pydantic import BaseModel, ConfigDict, Field, StrictFloat, StrictInt, Stric
 from typing import Any, ClassVar, Dict, List, Optional, Union
 from typing_extensions import Annotated
 from pupilcloud.models.offset_correction import OffsetCorrection
-from typing import Optional, Set
+from typing import Set
 from typing_extensions import Self
 
 class WearerPostRequest(BaseModel):

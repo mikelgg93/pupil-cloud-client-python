@@ -20,7 +20,7 @@ import json
 from pydantic import BaseModel, ConfigDict, StrictFloat, StrictInt, StrictStr
 from typing import Any, ClassVar, Dict, List, Optional, Union
 from pupilcloud.models.wearer import Wearer
-from typing import Optional, Set
+from typing import Set
 from typing_extensions import Self
 
 class WearerPostResponse(BaseModel):

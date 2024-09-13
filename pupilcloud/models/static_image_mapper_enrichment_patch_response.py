@@ -20,7 +20,7 @@ import json
 from pydantic import BaseModel, ConfigDict, StrictFloat, StrictInt, StrictStr
 from typing import Any, ClassVar, Dict, List, Optional, Union
 from pupilcloud.models.static_image_mapper_get_request import StaticImageMapperGetRequest
-from typing import Optional, Set
+from typing import Set
 from typing_extensions import Self
 
 class StaticImageMapperEnrichmentPatchResponse(BaseModel):

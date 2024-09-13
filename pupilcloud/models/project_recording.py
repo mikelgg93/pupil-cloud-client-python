@@ -20,7 +20,7 @@ import json
 from pydantic import BaseModel, ConfigDict, StrictStr
 from typing import Any, ClassVar, Dict, List, Optional
 from pupilcloud.models.project_event import ProjectEvent
-from typing import Optional, Set
+from typing import Set
 from typing_extensions import Self
 
 class ProjectRecording(BaseModel):

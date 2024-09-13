@@ -21,7 +21,7 @@ from pydantic import BaseModel, ConfigDict
 from typing import Any, ClassVar, Dict, List, Optional
 from pupilcloud.models.enrichment_download_spec import EnrichmentDownloadSpec
 from pupilcloud.models.recording_download_spec import RecordingDownloadSpec
-from typing import Optional, Set
+from typing import Set
 from typing_extensions import Self
 
 class ProjectDownloadRequest(BaseModel):

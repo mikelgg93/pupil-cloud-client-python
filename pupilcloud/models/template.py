@@ -21,7 +21,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, StrictBool, StrictStr
 from typing import Any, ClassVar, Dict, List, Optional
 from pupilcloud.models.template_item import TemplateItem
-from typing import Optional, Set
+from typing import Set
 from typing_extensions import Self
 
 class Template(BaseModel):

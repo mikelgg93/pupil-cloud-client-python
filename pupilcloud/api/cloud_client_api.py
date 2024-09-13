@@ -11,14 +11,11 @@
     Do not edit the class manually.
 """  # noqa: E501
 
-import warnings
 from pydantic import validate_call, Field, StrictFloat, StrictStr, StrictInt
 from typing import Any, Dict, List, Optional, Tuple, Union
 from typing_extensions import Annotated
 
-from pydantic import Field, StrictBool, StrictBytes, StrictFloat, StrictInt, StrictStr, field_validator
-from typing import Any, Dict, List, Optional, Union
-from typing_extensions import Annotated
+from pydantic import StrictBool
 from pupilcloud.models.accept_invitation_resource_post_response import AcceptInvitationResourcePostResponse
 from pupilcloud.models.aoi_get_response import AoiGetResponse
 from pupilcloud.models.aoi_patch_request import AoiPatchRequest
